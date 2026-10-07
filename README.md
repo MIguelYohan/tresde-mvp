@@ -60,3 +60,66 @@ node tests/marketplace.cjs
 Para uma instalação externa, informe `PLAYWRIGHT_MODULE` com o caminho do módulo; `PLAYWRIGHT_BROWSERS_PATH` pode apontar para os navegadores instalados. `TEST_URL` permite usar outra porta. Nenhuma dependência de teste é carregada pela aplicação.
 
 O teste usa um contexto novo de navegador, sem alterar os dados do navegador do usuário. Verifica filtros, perfis, persistência dos anexos, publicação no celular, ofertas, permissões, pagamento simulado, chat/moderação, produção, recebimento, avaliações, cancelamento, PDF e ausência de overflow em cinco larguras.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+prompt:::::::::::::::::::::::::::::::::::::::::::::::
+
+Quero migrar meu projeto atual, que está em HTML + CSS + JavaScript, para React + Vite + Supabase.
+
+Faça o seguinte:
+
+    Transforme as páginas HTML atuais em componentes React.
+    Preserve o máximo possível o visual, layout, responsividade e estilos atuais.
+    Não faça um redesign.
+    Organize o frontend de forma simples e reutilizável.
+    Use Vite para o projeto React.
+    Use Supabase para banco de dados, autenticação e backend quando necessário.
+    Crie uma pasta supabase/ para migrations e funções, caso sejam necessárias.
+    Use variáveis de ambiente para as credenciais do Supabase.
+    Nunca exponha a service_role_key no frontend.
+    Use RLS no Supabase para proteger os dados.
+    Não adicione bibliotecas desnecessárias.
+
+Estrutura inicial:
+
+projeto/
+├── frontend/
+│   ├── src/
+│   ├── public/
+│   ├── package.json
+│   └── vite.config.js
+│
+├── supabase/
+│   ├── migrations/
+│   └── functions/
+│
+└── README.md
+
+Antes de começar, analise meu HTML, CSS e JavaScript atuais e identifique o que precisa ser convertido para React e o que deve ser armazenado no Supabase.
+
+Faça a migração mantendo a aparência e as funcionalidades atuais.
+
+No final, explique brevemente o que foi alterado e como executar o projeto. 

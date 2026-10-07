@@ -1,0 +1,812 @@
+/**
+ * Módulo de Persistência Local (localStorage) do Sistema TresDê
+ * Gerencia persistência integral, CRUDs e carga inicial de demonstração (seed).
+ */
+
+const STORAGE_KEYS = {
+    USERS: 'tresde_users',
+    CURRENT_USER: 'tresde_current_user',
+    REQUESTS: 'tresde_requests',
+    OFFERS: 'tresde_offers',
+    MESSAGES: 'tresde_messages',
+    NOTIFICATIONS: 'tresde_notifications',
+    REVIEWS: 'tresde_reviews',
+    PAYMENTS: 'tresde_payments',
+    APP_INITIALIZED: 'tresde_initialized'
+};
+
+const StorageService = {
+    // Leitura genérica
+    get(key, defaultValue = []) {
+        try {
+            const data = localStorage.getItem(key);
+            return data ? JSON.parse(data) : defaultValue;
+        } catch (e) {
+            console.error(`Erro ao ler chave ${key} do localStorage:`, e);
+            return defaultValue;
+        }
+    },
+
+    // Gravação genérica
+    set(key, value) {
+        try {
+            localStorage.setItem(key, JSON.stringify(value));
+            return true;
+        } catch (e) {
+            console.error(`Erro ao salvar chave ${key} no localStorage:`, e);
+            return false;
+        }
+    },
+
+    // Inicialização da demonstração
+    initSeed() {
+        const initialized = localStorage.getItem(STORAGE_KEYS.APP_INITIALIZED);
+        if (initialized) {
+            return; // Já inicializado, mantém os dados persistidos pelo usuário
+        }
+
+        console.log('Inicializando dados fictícios de demonstração no localStorage...');
+
+        // 1. Usuários Fictícios (Pessoa Física e Pessoa Jurídica)
+        const seedUsers = [
+            {
+                id: 'usr_mariana',
+                type: 'PF',
+                name: 'Mariana Silva',
+                cpf: '529.982.247-25',
+                birthDate: '1995-05-14',
+                cep: '01310-100',
+                address: {
+                    cep: '01310-100',
+                    logradouro: 'Avenida Paulista',
+                    bairro: 'Bela Vista',
+                    cidade: 'São Paulo',
+                    uf: 'SP'
+                },
+                phone: '(11) 98765-4321',
+                email: 'mariana.silva@email.com',
+                password: 'user123',
+                gender: 'Feminino',
+                avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
+                banner: 'https://images.unsplash.com/photo-1513519245088-0e12902e5a38?w=800&auto=format&fit=crop&q=80',
+                isSeller: false,
+                ratingAsClient: 4.9,
+                totalClientReviews: 5,
+                createdAt: '2026-08-10T10:00:00Z'
+            },
+            {
+                id: 'usr_carlos',
+                type: 'PJ',
+                name: 'Carlos Oliveira',
+                cpf: '341.289.478-00',
+                birthDate: '1989-11-23',
+                cep: '04538-133',
+                address: {
+                    cep: '04538-133',
+                    logradouro: 'Rua Joaquim Floriano',
+                    bairro: 'Itaim Bibi',
+                    cidade: 'São Paulo',
+                    uf: 'SP'
+                },
+                phone: '(11) 97123-4567',
+                email: 'carlos@oficina3d.com.br',
+                password: 'maker123',
+                gender: 'Masculino',
+                avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
+                banner: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=800&auto=format&fit=crop&q=80',
+                isSeller: true,
+                ratingAsClient: 5.0,
+                ratingAsSeller: 4.85,
+                totalSellerReviews: 14,
+                createdAt: '2026-07-01T09:30:00Z',
+                sellerData: {
+                    businessName: 'Oficina 3D Prototipagem ME',
+                    cnpj: '12.345.678/0001-95',
+                    verificationInfo: 'Empresa Ativa na RFB • Certificação Técnica em Manufatura Aditiva CREA-SP',
+                    categories: ['Impressão 3D', 'Prototipagem Rápida', 'Engenharia Reversa'],
+                    skills: 'Especialista em FDM de alta precisão (PLA, PETG, ABS, Nylon com Fibra de Carbono) e SLA em Resina 8K. Acabamento químico, lixamento técnico e pintura automotiva.',
+                    portfolio: [
+                        {
+                            id: 'port_1',
+                            title: 'Protótipo Funcional de Caixa de Engrenagens Redutoras',
+                            description: 'Desenvolvimento e impressão 3D de engrenagens em Nylon para testes de torque e encaixe de motor de passo.',
+                            image: 'https://images.unsplash.com/photo-1581092335397-9583fe92d232?w=500&auto=format&fit=crop&q=80',
+                            category: 'Prototipagem Rápida',
+                            date: '2026-08-15'
+                        },
+                        {
+                            id: 'port_2',
+                            title: 'Miniatura Hiper-detalhada em Resina 8K (Dragão RPG)',
+                            description: 'Impressão 3D em resina fotopolimerizável com altura de camada de 0.025mm e cura UV em câmara controlada.',
+                            image: 'https://images.unsplash.com/photo-1563245372-f21724e3856d?w=500&auto=format&fit=crop&q=80',
+                            category: 'Impressão 3D',
+                            date: '2026-08-28'
+                        },
+                        {
+                            id: 'port_3',
+                            title: 'Suporte Ergonômico de Mesa para Headphone e Cabo',
+                            description: 'Peça personalizada em PLA Wood com acabamento em verniz acetinado e base antiderrapante emborrachada.',
+                            image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&auto=format&fit=crop&q=80',
+                            category: 'Personalização',
+                            date: '2026-09-05'
+                        }
+                    ],
+                    stock: [
+                        {
+                            id: 'stk_1',
+                            name: 'Filamento PLA Silk Prata 1kg (1.75mm)',
+                            category: 'Insumos',
+                            quantity: 12,
+                            price: 119.90,
+                            active: true,
+                            description: 'Filamento de alta fluidez e brilho metálico acetinado.'
+                        },
+                        {
+                            id: 'stk_2',
+                            name: 'Vaso Poligonal Geométrico 3D (Pronta Entrega)',
+                            category: 'Decoração',
+                            quantity: 5,
+                            price: 45.00,
+                            active: true,
+                            description: 'Impresso em PLA ecológico fosco, altura 18cm.'
+                        },
+                        {
+                            id: 'stk_3',
+                            name: 'Resina Standard Cinza 1kg para Impressora SLA/DLP',
+                            category: 'Insumos',
+                            quantity: 4,
+                            price: 189.00,
+                            active: true,
+                            description: 'Resina rápida 405nm de altíssima definição de superfícies.'
+                        },
+                        {
+                            id: 'stk_4',
+                            name: 'Bico Nozzle E3D V6 Latão 0.4mm (Pacote com 3)',
+                            category: 'Acessórios',
+                            quantity: 8,
+                            price: 35.00,
+                            active: false,
+                            description: 'Bicos de reposição (Temporariamente inativo).'
+                        }
+                    ]
+                }
+            },
+            {
+                id: 'usr_ana',
+                type: 'PJ',
+                name: 'Ana Beatriz Rocha',
+                cpf: '218.492.830-50',
+                birthDate: '1992-03-17',
+                cep: '22041-001',
+                address: {
+                    cep: '22041-001',
+                    logradouro: 'Rua Santa Clara',
+                    bairro: 'Copacabana',
+                    cidade: 'Rio de Janeiro',
+                    uf: 'RJ'
+                },
+                phone: '(21) 99887-6655',
+                email: 'ana@arteeresina.com',
+                password: 'arte123',
+                gender: 'Feminino',
+                avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80',
+                banner: 'https://images.unsplash.com/photo-1452860606245-08befc0ff44b?w=800&auto=format&fit=crop&q=80',
+                isSeller: true,
+                ratingAsClient: 5.0,
+                ratingAsSeller: 4.95,
+                totalSellerReviews: 9,
+                createdAt: '2026-07-20T14:15:00Z',
+                sellerData: {
+                    businessName: 'Ateliê Arte & Resina Criativa',
+                    cnpj: '24.582.910/0001-70',
+                    verificationInfo: 'MEI Cadastrado • Artesã Certificada pelo Programa do Artesanato Brasileiro (PAB)',
+                    categories: ['Artesanato', 'Personalização', 'Pintura Manual'],
+                    skills: 'Pintura manual com aerógrafo e pincel fino para action figures. Acabamento vitrificado em resina epóxi, marchetaria e fundição artesanal.',
+                    portfolio: [
+                        {
+                            id: 'port_ana_1',
+                            title: 'Pintura e Customização de Diorama Cyberpunk',
+                            description: 'Pintura detalhada com efeitos de iluminação néon, weathering e selagem com verniz fosco acrílico.',
+                            image: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?w=500&auto=format&fit=crop&q=80',
+                            category: 'Pintura Manual',
+                            date: '2026-09-01'
+                        },
+                        {
+                            id: 'port_ana_2',
+                            title: 'Porta-Copos Florais em Resina Epóxi Cristal com Folhas de Ouro',
+                            description: 'Conjunto de 4 peças em resina curada à vácuo sem bolhas, com inserções de flores naturais desidratadas.',
+                            image: 'https://images.unsplash.com/photo-1513519245088-0e12902e5a38?w=500&auto=format&fit=crop&q=80',
+                            category: 'Artesanato',
+                            date: '2026-09-12'
+                        }
+                    ],
+                    stock: [
+                        {
+                            id: 'stk_ana_1',
+                            name: 'Bandeja Oval em Concreto Criativo e Resina',
+                            category: 'Decoração',
+                            quantity: 3,
+                            price: 78.00,
+                            active: true,
+                            description: 'Bandeja artesanal impermeabilizada para joias e perfumes.'
+                        },
+                        {
+                            id: 'stk_ana_2',
+                            name: 'Kit com 6 Tintas Acrílicas Model Color Vallejo',
+                            category: 'Insumos',
+                            quantity: 7,
+                            price: 95.00,
+                            active: true,
+                            description: 'Tintas de alta pigmentação ideais para miniaturas e impressão 3D.'
+                        }
+                    ]
+                }
+            },
+            {
+                id: 'usr_lucas',
+                type: 'PF',
+                name: 'Lucas Mendes',
+                cpf: '456.789.012-34',
+                birthDate: '1998-09-10',
+                cep: '30140-071',
+                address: {
+                    cep: '30140-071',
+                    logradouro: 'Rua Fernandes Tourinho',
+                    bairro: 'Funcionários',
+                    cidade: 'Belo Horizonte',
+                    uf: 'MG'
+                },
+                phone: '(31) 98456-7890',
+                email: 'lucas.mendes@email.com',
+                password: 'lucas123',
+                gender: 'Masculino',
+                avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80',
+                banner: '',
+                isSeller: false,
+                ratingAsClient: 4.8,
+                totalClientReviews: 3,
+                createdAt: '2026-08-01T11:00:00Z'
+            }
+        ];
+
+        // 2. Requisições em Diferentes Status (Aberto, Em análise, Em andamento, Concluído, Cancelado)
+        const seedRequests = [
+            {
+                id: 'req_101',
+                clientId: 'usr_mariana',
+                clientName: 'Mariana Silva',
+                title: 'Suporte Articulado para Headset e Celular com Passador de Cabos',
+                description: 'Preciso de um suporte robusto para fone de ouvido com base estável e calha traseira para esconder cabos USB. Tenho preferência por acabamento em preto fosco texturizado para combinar com meu setup de trabalho. Envio o modelo de referência.',
+                category: 'Impressão 3D',
+                budget: 85.00,
+                desiredDeadline: '2026-10-25',
+                attachments: [
+                    { name: 'referencia_headset_stand.jpg', type: 'image', url: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&auto=format&fit=crop&q=80' },
+                    { name: 'modelo_conceito.stl', type: 'stl', size: '2.4 MB' }
+                ],
+                status: 'Aberto',
+                selectedOfferId: null,
+                assignedSellerId: null,
+                productionStatus: null,
+                createdAt: '2026-09-27T10:00:00Z',
+                statusHistory: [
+                    { status: 'Aberto', timestamp: '2026-09-27T10:00:00Z', note: 'Requisição cadastrada pela cliente' }
+                ]
+            },
+            {
+                id: 'req_102',
+                clientId: 'usr_mariana',
+                clientName: 'Mariana Silva',
+                title: 'Action Figure de Cavaleiro Medieval 25cm com Pintura Detalhada',
+                description: 'Procuro profissional para imprimir em alta definição (resina de preferência) uma estatueta de 25cm com riqueza de detalhes na armadura e capa. Também necessito da pintura artesanal realista com efeitos metálicos e desgastes.',
+                category: 'Impressão 3D e Pintura',
+                budget: 260.00,
+                desiredDeadline: '2026-10-30',
+                attachments: [
+                    { name: 'concept_art_knight.png', type: 'image', url: 'https://images.unsplash.com/photo-1563245372-f21724e3856d?w=400&auto=format&fit=crop&q=80' },
+                    { name: 'knight_sculpt_pose.stl', type: 'stl', size: '14.8 MB' }
+                ],
+                status: 'Em análise', // Já recebeu propostas de Carlos e Ana!
+                selectedOfferId: null,
+                assignedSellerId: null,
+                productionStatus: null,
+                createdAt: '2026-09-25T14:30:00Z',
+                statusHistory: [
+                    { status: 'Aberto', timestamp: '2026-09-25T14:30:00Z', note: 'Requisição cadastrada pela cliente' },
+                    { status: 'Em análise', timestamp: '2026-09-26T09:15:00Z', note: 'Propostas recebidas de prestadores' }
+                ]
+            },
+            {
+                id: 'req_103',
+                clientId: 'usr_lucas',
+                clientName: 'Lucas Mendes',
+                title: 'Luminária Poligonal em Madeira Nobre e Resina Epóxi Âmbar',
+                description: 'Luminária de mesa com blocos geométricos de cedro integrados a resina cristal translúcida na cor âmbar com fita LED embutida 3000K (luz quente).',
+                category: 'Artesanato',
+                budget: 220.00,
+                desiredDeadline: '2026-10-20',
+                attachments: [
+                    { name: 'inspiracao_lamp.jpg', type: 'image', url: 'https://images.unsplash.com/photo-1513519245088-0e12902e5a38?w=400&auto=format&fit=crop&q=80' }
+                ],
+                status: 'Em andamento',
+                selectedOfferId: 'off_203',
+                assignedSellerId: 'usr_ana',
+                productionStatus: 'Em Produção', // Sequência: Recebido -> Em Produção -> Finalizado -> Enviado -> Entregue
+                createdAt: '2026-09-20T11:00:00Z',
+                statusHistory: [
+                    { status: 'Aberto', timestamp: '2026-09-20T11:00:00Z', note: 'Requisição aberta' },
+                    { status: 'Em análise', timestamp: '2026-09-21T08:00:00Z', note: 'Oferta recebida de Ateliê Arte & Resina' },
+                    { status: 'Em andamento', timestamp: '2026-09-22T14:00:00Z', note: 'Oferta aceita pelo cliente Lucas' },
+                    { status: 'Recebido', timestamp: '2026-09-22T16:30:00Z', note: 'Vendedora confirmou recebimento do pedido' },
+                    { status: 'Em Produção', timestamp: '2026-09-24T10:00:00Z', note: 'Resina vazada e em processo de lixamento' }
+                ]
+            },
+            {
+                id: 'req_104',
+                clientId: 'usr_mariana',
+                clientName: 'Mariana Silva',
+                title: 'Peça de Reposição e Suporte para Drone FPV em PETG Reforçado',
+                description: 'Reprodução de braço protetor do motor para drone quadricóptero. A peça requer tolerância máxima de 0.2mm e resistência a impactos mecânicos.',
+                category: 'Impressão 3D',
+                budget: 60.00,
+                desiredDeadline: '2026-09-26',
+                attachments: [
+                    { name: 'drone_arm_broken.jpg', type: 'image', url: 'https://images.unsplash.com/photo-1581092335397-9583fe92d232?w=400&auto=format&fit=crop&q=80' },
+                    { name: 'drone_arm_v2.stl', type: 'stl', size: '1.2 MB' }
+                ],
+                status: 'Concluído',
+                selectedOfferId: 'off_204',
+                assignedSellerId: 'usr_carlos',
+                productionStatus: 'Entregue',
+                createdAt: '2026-09-10T09:00:00Z',
+                statusHistory: [
+                    { status: 'Aberto', timestamp: '2026-09-10T09:00:00Z', note: 'Requisição criada' },
+                    { status: 'Em andamento', timestamp: '2026-09-11T10:00:00Z', note: 'Oferta de Carlos aceita' },
+                    { status: 'Finalizado', timestamp: '2026-09-13T17:00:00Z', note: 'Peça impressa e inspecionada' },
+                    { status: 'Enviado', timestamp: '2026-09-14T09:00:00Z', note: 'Envio via motoboy na cidade de SP' },
+                    { status: 'Entregue', timestamp: '2026-09-14T15:30:00Z', note: 'Entregue e conferida pela cliente' },
+                    { status: 'Concluído', timestamp: '2026-09-15T10:00:00Z', note: 'Pagamento liberado e avaliações registradas' }
+                ]
+            }
+        ];
+
+        // 3. Ofertas de Orçamento Enviadas pelos Vendedores
+        const seedOffers = [
+            {
+                id: 'off_201',
+                requestId: 'req_102',
+                sellerId: 'usr_carlos',
+                sellerName: 'Carlos Oliveira (Oficina 3D Prototipagem ME)',
+                sellerAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
+                sellerRating: 4.85,
+                price: 240.00,
+                deadlineDate: '2026-10-22',
+                notes: 'Produção em Resina 8K Anycubic com primer acrílico profissional e pintura técnica de armadura em tons cromados e ferrugem leve.',
+                status: 'Pendente', // Pendente, Aceita, Recusada, Retirada, Negociando
+                counterOffer: null,
+                createdAt: '2026-09-26T09:00:00Z'
+            },
+            {
+                id: 'off_202',
+                requestId: 'req_102',
+                sellerId: 'usr_ana',
+                sellerName: 'Ana Beatriz Rocha (Ateliê Arte & Resina)',
+                sellerAvatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80',
+                sellerRating: 4.95,
+                price: 255.00,
+                deadlineDate: '2026-10-25',
+                notes: 'Pintura artística à mão com pincel Kolinsky e aerografia nos degradês da capa. Acompanha base decorativa em resina com efeito de rocha.',
+                status: 'Pendente',
+                counterOffer: null,
+                createdAt: '2026-09-26T11:30:00Z'
+            },
+            {
+                id: 'off_203',
+                requestId: 'req_103',
+                sellerId: 'usr_ana',
+                sellerName: 'Ana Beatriz Rocha (Ateliê Arte & Resina)',
+                sellerAvatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80',
+                sellerRating: 4.95,
+                price: 210.00,
+                deadlineDate: '2026-10-18',
+                notes: 'Madeira de cedro rosa certificada com resina âmbar anti-amarelamento e LED embutido.',
+                status: 'Aceita',
+                counterOffer: null,
+                createdAt: '2026-09-21T08:00:00Z'
+            },
+            {
+                id: 'off_204',
+                requestId: 'req_104',
+                sellerId: 'usr_carlos',
+                sellerName: 'Carlos Oliveira (Oficina 3D Prototipagem ME)',
+                sellerAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
+                sellerRating: 4.85,
+                price: 55.00,
+                deadlineDate: '2026-09-14',
+                notes: 'Impresso com 6 perímetros e 50% de infill gyroid para máxima rigidez mecânica.',
+                status: 'Aceita',
+                counterOffer: null,
+                createdAt: '2026-09-10T14:00:00Z'
+            }
+        ];
+
+        // 4. Mensagens de Chat por Requisição
+        const seedMessages = [
+            {
+                id: 'msg_1',
+                requestId: 'req_103',
+                senderId: 'usr_ana',
+                senderName: 'Ana Beatriz Rocha',
+                text: 'Olá Lucas! Já selecionei o bloco de cedro rosa para a sua luminária. Você prefere acabamento do verniz brilhante ou acetinado?',
+                timestamp: '2026-09-22T17:00:00Z'
+            },
+            {
+                id: 'msg_2',
+                requestId: 'req_103',
+                senderId: 'usr_lucas',
+                senderName: 'Lucas Mendes',
+                text: 'Oi Ana! Prefiro o acabamento acetinado com certeza, fica mais sofisticado e moderno. Obrigado por perguntar!',
+                timestamp: '2026-09-22T17:45:00Z'
+            },
+            {
+                id: 'msg_3',
+                requestId: 'req_103',
+                senderId: 'usr_ana',
+                senderName: 'Ana Beatriz Rocha',
+                text: 'Perfeito! Acabei de aplicar a primeira camada e a transparência âmbar ficou espetacular. Logo envio fotos no próximo status!',
+                timestamp: '2026-09-24T10:05:00Z'
+            },
+            {
+                id: 'msg_4',
+                requestId: 'req_104',
+                senderId: 'usr_mariana',
+                senderName: 'Mariana Silva',
+                text: 'Carlos, a peça encaixou com precisão milimétrica no drone! Ficou perfeita!',
+                timestamp: '2026-09-14T16:00:00Z'
+            },
+            {
+                id: 'msg_5',
+                requestId: 'req_104',
+                senderId: 'usr_carlos',
+                senderName: 'Carlos Oliveira',
+                text: 'Excelente notícia Mariana! O infill giroidal garantiu a resistência sem pesar. Muito obrigado pela confiança e parceria!',
+                timestamp: '2026-09-14T16:15:00Z'
+            }
+        ];
+
+        // 5. Notificações
+        const seedNotifications = [
+            {
+                id: 'notif_1',
+                userId: 'usr_mariana',
+                title: 'Nova Proposta Recebida',
+                message: 'Carlos Oliveira enviou um orçamento de R$ 240,00 para a requisição "Action Figure de Cavaleiro Medieval".',
+                linkRequestId: 'req_102',
+                read: false,
+                timestamp: '2026-09-26T09:02:00Z'
+            },
+            {
+                id: 'notif_2',
+                userId: 'usr_mariana',
+                title: 'Nova Proposta Recebida',
+                message: 'Ana Beatriz Rocha enviou um orçamento de R$ 255,00 para a requisição "Action Figure de Cavaleiro Medieval".',
+                linkRequestId: 'req_102',
+                read: false,
+                timestamp: '2026-09-26T11:32:00Z'
+            },
+            {
+                id: 'notif_3',
+                userId: 'usr_carlos',
+                title: 'Nova Requisição Compatível',
+                message: 'Mariana Silva publicou uma requisição compatível com sua área: "Suporte Articulado para Headset".',
+                linkRequestId: 'req_101',
+                read: false,
+                timestamp: '2026-09-27T10:05:00Z'
+            },
+            {
+                id: 'notif_4',
+                userId: 'usr_lucas',
+                title: 'Status de Produção Atualizado',
+                message: 'Ana Beatriz alterou o status da sua Luminária para "Em Produção".',
+                linkRequestId: 'req_103',
+                read: true,
+                timestamp: '2026-09-24T10:00:00Z'
+            }
+        ];
+
+        // 6. Avaliações Pós-Serviço
+        const seedReviews = [
+            {
+                id: 'rev_1',
+                requestId: 'req_104',
+                reviewerId: 'usr_mariana',
+                reviewerName: 'Mariana Silva',
+                targetUserId: 'usr_carlos',
+                targetRole: 'seller', // avaliou o vendedor
+                rating: 5,
+                comment: 'Trabalho de altíssima qualidade! A precisão dimensional da peça em PETG foi impecável e o envio foi muito rápido.',
+                createdAt: '2026-09-15T09:30:00Z'
+            },
+            {
+                id: 'rev_2',
+                requestId: 'req_104',
+                reviewerId: 'usr_carlos',
+                reviewerName: 'Carlos Oliveira',
+                targetUserId: 'usr_mariana',
+                targetRole: 'client', // avaliou a cliente
+                rating: 5,
+                comment: 'Cliente excelente! Forneceu as especificações com clareza e comunicou o recebimento com agilidade.',
+                createdAt: '2026-09-15T09:45:00Z'
+            }
+        ];
+
+        // 7. Pagamentos Simulados
+        const seedPayments = [
+            {
+                id: 'pay_1',
+                requestId: 'req_104',
+                clientId: 'usr_mariana',
+                sellerId: 'usr_carlos',
+                amount: 55.00,
+                method: 'PIX',
+                status: 'Aprovado',
+                pixCode: '00020126580014br.gov.bcb.pix0136tresde-mvp-simulado-pix-carlos520400005303986540555.005802BR5925Carlos Oliveira6009SAO PAULO62070503***6304E8A2',
+                transactionDate: '2026-09-11T10:15:00Z'
+            }
+        ];
+
+        // Persiste todas as coleções
+        this.set(STORAGE_KEYS.USERS, seedUsers);
+        this.set(STORAGE_KEYS.REQUESTS, seedRequests);
+        this.set(STORAGE_KEYS.OFFERS, seedOffers);
+        this.set(STORAGE_KEYS.MESSAGES, seedMessages);
+        this.set(STORAGE_KEYS.NOTIFICATIONS, seedNotifications);
+        this.set(STORAGE_KEYS.REVIEWS, seedReviews);
+        this.set(STORAGE_KEYS.PAYMENTS, seedPayments);
+
+        // Usuário logado padrão para acesso imediato: Mariana Silva (Cliente)
+        this.set(STORAGE_KEYS.CURRENT_USER, seedUsers[0]);
+
+        localStorage.setItem(STORAGE_KEYS.APP_INITIALIZED, 'true');
+        console.log('Seed de demonstração inicializado com sucesso.');
+    },
+
+    // Reset para re-demonstração limpa
+    resetSeed() {
+        localStorage.removeItem(STORAGE_KEYS.APP_INITIALIZED);
+        localStorage.removeItem(STORAGE_KEYS.USERS);
+        localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
+        localStorage.removeItem(STORAGE_KEYS.REQUESTS);
+        localStorage.removeItem(STORAGE_KEYS.OFFERS);
+        localStorage.removeItem(STORAGE_KEYS.MESSAGES);
+        localStorage.removeItem(STORAGE_KEYS.NOTIFICATIONS);
+        localStorage.removeItem(STORAGE_KEYS.REVIEWS);
+        localStorage.removeItem(STORAGE_KEYS.PAYMENTS);
+        this.initSeed();
+    },
+
+    // ==================== CRUD USUÁRIOS & SESSÃO ====================
+    getCurrentUser() {
+        return this.get(STORAGE_KEYS.CURRENT_USER, null);
+    },
+
+    setCurrentUser(user) {
+        return this.set(STORAGE_KEYS.CURRENT_USER, user);
+    },
+
+    logout() {
+        localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
+    },
+
+    getUsers() {
+        return this.get(STORAGE_KEYS.USERS, []);
+    },
+
+    getUserById(id) {
+        const users = this.getUsers();
+        return users.find(u => u.id === id) || null;
+    },
+
+    getUserByEmail(email) {
+        if (!email) return null;
+        const users = this.getUsers();
+        return users.find(u => u.email.trim().toLowerCase() === email.trim().toLowerCase()) || null;
+    },
+
+    getUserByCPF(cpf) {
+        if (!cpf) return null;
+        const clean = cpf.replace(/\D/g, '');
+        const users = this.getUsers();
+        return users.find(u => (u.cpf || '').replace(/\D/g, '') === clean) || null;
+    },
+
+    saveUser(userData) {
+        const users = this.getUsers();
+        const index = users.findIndex(u => u.id === userData.id);
+        if (index >= 0) {
+            users[index] = { ...users[index], ...userData };
+        } else {
+            users.push(userData);
+        }
+        this.set(STORAGE_KEYS.USERS, users);
+
+        // Se for o usuário corrente, atualiza a sessão
+        const currentUser = this.getCurrentUser();
+        if (currentUser && currentUser.id === userData.id) {
+            this.setCurrentUser(users[index >= 0 ? index : users.length - 1]);
+        }
+        return userData;
+    },
+
+    // ==================== CRUD REQUISIÇÕES ====================
+    getRequests() {
+        return this.get(STORAGE_KEYS.REQUESTS, []);
+    },
+
+    getRequestById(id) {
+        const requests = this.getRequests();
+        return requests.find(r => r.id === id) || null;
+    },
+
+    saveRequest(requestData) {
+        const requests = this.getRequests();
+        const index = requests.findIndex(r => r.id === requestData.id);
+        if (index >= 0) {
+            requests[index] = { ...requests[index], ...requestData };
+        } else {
+            requests.unshift(requestData);
+        }
+        this.set(STORAGE_KEYS.REQUESTS, requests);
+        return requestData;
+    },
+
+    deleteRequest(id) {
+        let requests = this.getRequests();
+        requests = requests.filter(r => r.id !== id);
+        return this.set(STORAGE_KEYS.REQUESTS, requests);
+    },
+
+    // ==================== CRUD OFERTAS ====================
+    getOffers(requestId = null) {
+        const offers = this.get(STORAGE_KEYS.OFFERS, []);
+        if (requestId) {
+            return offers.filter(o => o.requestId === requestId);
+        }
+        return offers;
+    },
+
+    getOfferById(id) {
+        const offers = this.getOffers();
+        return offers.find(o => o.id === id) || null;
+    },
+
+    saveOffer(offerData) {
+        const offers = this.getOffers();
+        const index = offers.findIndex(o => o.id === offerData.id);
+        if (index >= 0) {
+            offers[index] = { ...offers[index], ...offerData };
+        } else {
+            offers.unshift(offerData);
+        }
+        this.set(STORAGE_KEYS.OFFERS, offers);
+        return offerData;
+    },
+
+    deleteOffer(id) {
+        let offers = this.getOffers();
+        offers = offers.filter(o => o.id !== id);
+        return this.set(STORAGE_KEYS.OFFERS, offers);
+    },
+
+    // ==================== CRUD CHAT & MENSAGENS ====================
+    getMessages(requestId) {
+        const messages = this.get(STORAGE_KEYS.MESSAGES, []);
+        if (!requestId) return messages;
+        return messages.filter(m => m.requestId === requestId);
+    },
+
+    addMessage(msgData) {
+        const messages = this.get(STORAGE_KEYS.MESSAGES, []);
+        messages.push(msgData);
+        this.set(STORAGE_KEYS.MESSAGES, messages);
+        return msgData;
+    },
+
+    // ==================== NOTIFICAÇÕES ====================
+    getNotifications(userId = null) {
+        const notifs = this.get(STORAGE_KEYS.NOTIFICATIONS, []);
+        if (userId) {
+            return notifs.filter(n => n.userId === userId).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        }
+        return notifs;
+    },
+
+    addNotification(notifData) {
+        const notifs = this.get(STORAGE_KEYS.NOTIFICATIONS, []);
+        const newNotif = {
+            id: 'notif_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+            read: false,
+            timestamp: new Date().toISOString(),
+            ...notifData
+        };
+        notifs.unshift(newNotif);
+        this.set(STORAGE_KEYS.NOTIFICATIONS, notifs);
+        return newNotif;
+    },
+
+    markNotificationAsRead(id) {
+        const notifs = this.get(STORAGE_KEYS.NOTIFICATIONS, []);
+        const target = notifs.find(n => n.id === id);
+        if (target) {
+            target.read = true;
+            this.set(STORAGE_KEYS.NOTIFICATIONS, notifs);
+        }
+    },
+
+    markAllNotificationsAsRead(userId) {
+        const notifs = this.get(STORAGE_KEYS.NOTIFICATIONS, []);
+        notifs.forEach(n => {
+            if (n.userId === userId) n.read = true;
+        });
+        this.set(STORAGE_KEYS.NOTIFICATIONS, notifs);
+    },
+
+    // ==================== AVALIAÇÕES ====================
+    getReviews(userId = null, role = null) {
+        const reviews = this.get(STORAGE_KEYS.REVIEWS, []);
+        return reviews.filter(r => {
+            let match = true;
+            if (userId) match = match && r.targetUserId === userId;
+            if (role) match = match && r.targetRole === role;
+            return match;
+        });
+    },
+
+    addReview(reviewData) {
+        const reviews = this.get(STORAGE_KEYS.REVIEWS, []);
+        reviews.unshift(reviewData);
+        this.set(STORAGE_KEYS.REVIEWS, reviews);
+
+        // Recalcula média de avaliação do usuário alvo
+        this.recalculateUserRating(reviewData.targetUserId, reviewData.targetRole);
+        return reviewData;
+    },
+
+    recalculateUserRating(userId, role) {
+        const reviews = this.getReviews(userId, role);
+        if (reviews.length === 0) return;
+        const sum = reviews.reduce((acc, r) => acc + Number(r.rating), 0);
+        const avg = Math.round((sum / reviews.length) * 10) / 10;
+
+        const user = this.getUserById(userId);
+        if (user) {
+            if (role === 'seller') {
+                user.ratingAsSeller = avg;
+                user.totalSellerReviews = reviews.length;
+            } else {
+                user.ratingAsClient = avg;
+                user.totalClientReviews = reviews.length;
+            }
+            this.saveUser(user);
+        }
+    },
+
+    // ==================== PAGAMENTOS SIMULADOS ====================
+    getPayments(requestId = null) {
+        const payments = this.get(STORAGE_KEYS.PAYMENTS, []);
+        if (requestId) {
+            return payments.filter(p => p.requestId === requestId);
+        }
+        return payments;
+    },
+
+    addPayment(paymentData) {
+        const payments = this.get(STORAGE_KEYS.PAYMENTS, []);
+        payments.unshift(paymentData);
+        this.set(STORAGE_KEYS.PAYMENTS, payments);
+        return paymentData;
+    }
+};
+
+window.StorageService = StorageService;
+window.STORAGE_KEYS = STORAGE_KEYS;

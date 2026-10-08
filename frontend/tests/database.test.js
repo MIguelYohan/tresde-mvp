@@ -1,0 +1,81 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { readFile, readdir } from 'node:fs/promises';
+import { PGlite } from '@electric-sql/pglite';
+
+// Real PostgreSQL engine in WASM; only Supabase-owned auth/storage schemas are fixtures.
+// Run the same migrations against a Supabase project before deploying.
+test('migrations, RPC transitions, RLS isolation and storage authorization', async () => {
+ const db=new PGlite();
+ try {
+  await db.exec(`create role anon; create role authenticated; create schema auth; create schema storage;
+   create table auth.users(id uuid primary key,raw_user_meta_data jsonb default '{}');
+   create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;
+   grant usage on schema auth, public, storage to anon,authenticated;
+   grant execute on function auth.uid() to anon,authenticated;
+   create table storage.buckets(id text primary key,name text,public boolean,file_size_limit bigint,allowed_mime_types text[]);
+   create table storage.objects(id uuid default gen_random_uuid(),bucket_id text,name text);
+   alter table storage.objects enable row level security;
+   grant select,insert,delete on storage.objects to anon,authenticated;
+   create function storage.foldername(name text) returns text[] language sql immutable as $$ select (string_to_array(name,'/'))[1:array_length(string_to_array(name,'/'),1)-1] $$;`);
+  const folder=new URL('../../supabase/migrations/',import.meta.url);
+  for(const name of (await readdir(folder)).filter(n=>n.endsWith('.sql')).sort())await db.exec(await readFile(new URL(name,folder),'utf8'));
+  const client='10000000-0000-4000-8000-000000000001',seller='10000000-0000-4000-8000-000000000002',stranger='10000000-0000-4000-8000-000000000003';
+  for(const [id,name] of [[client,'Cliente Teste'],[seller,'Prestador Teste'],[stranger,'Pessoa Externa']])await db.query('insert into auth.users(id,raw_user_meta_data) values($1,$2)',[id,{name,registration:{cpf:id,phone:'privado'}}]);
+  const actor=async(id)=>{await db.exec('reset role');await db.query("select set_config('request.jwt.claim.sub',$1,false)",[id || '']);await db.exec(`set role ${id?'authenticated':'anon'}`);};
+  const rpc=async(action,payload={})=>(await db.query('select public.marketplace_action($1,$2) id',[action,payload])).rows[0].id;
+  const count=async(table)=>(await db.query(`select count(*)::int n from public.${table}`)).rows[0].n;
+  await actor(null);
+  assert.equal(await count('profiles'),3);
+  await assert.rejects(()=>count('private_profiles'),/permission denied/);
+  await assert.rejects(()=>rpc('save_request',{}),/permission denied/);
+  await actor(seller);
+  await rpc('save_seller',{data:{businessName:'Ateliê Teste',categories:['Impressão 3D'],skills:'Modelagem'}});
+  await actor(client);
+  assert.equal(await count('private_profiles'),1);
+  await assert.rejects(()=>db.query('update public.profiles set is_seller=true where id=$1',[stranger]),/permission denied/);
+  const request=await rpc('save_request',{data:{title:'Vaso geométrico',description:'Vaso personalizado em PLA',category:'Impressão 3D',budget:100,desiredDeadline:'2099-12-20',attachments:[]}});
+  await actor(seller);
+  await assert.rejects(()=>rpc('save_offer',{requestId:request,data:{price:90,deadlineDate:'2099-12-21',notes:'Entrega'}}),/inválidos/);
+  const offer=await rpc('save_offer',{requestId:request,data:{price:90,deadlineDate:'2099-12-15',notes:'Impressão fosca'}});
+  await assert.rejects(()=>rpc('save_offer',{requestId:request,data:{price:80,deadlineDate:'2099-12-15',notes:'Duplicada'}}),/unique constraint/);
+  await assert.rejects(()=>rpc('accept_offer',{offerId:offer,method:'PIX'}),/Somente o cliente/);
+  await actor(stranger);
+  assert.equal(await count('offers'),0);
+  assert.equal(await count('notifications'),0);
+  await assert.rejects(()=>rpc('cancel_request',{requestId:request,reason:'Sem autorização'}),/não pode/);
+  await assert.rejects(()=>rpc('save_request',{id:request,data:{title:'Invasão',description:'Alteração indevida',category:'Impressão 3D',budget:1,desiredDeadline:'2099-12-01'}}),/não pode/);
+  await actor(client);
+  assert.equal(await count('offers'),1);
+  await rpc('negotiate',{offerId:offer,data:{price:85,deadlineDate:'2099-12-14',notes:'Retirada local'}});
+  await assert.rejects(()=>rpc('accept_offer',{offerId:offer,method:'PIX'}),/confirmada/);
+  await actor(seller);await rpc('respond_counter',{offerId:offer,accept:true});
+  await actor(client);await rpc('accept_offer',{offerId:offer,method:'PIX',amount:1,sellerId:stranger});
+  assert.equal((await db.query('select amount::float,status from public.payments')).rows[0].amount,85);
+  assert.equal((await db.query('select status from public.payments')).rows[0].status,'Simulado');
+  await assert.rejects(()=>rpc('accept_offer',{offerId:offer,method:'PIX'}),/não está disponível/);
+  await assert.rejects(()=>rpc('advance_production',{requestId:request}),/prestador contratado/);
+  await assert.rejects(()=>rpc('review',{requestId:request,rating:5}),/após o recebimento/);
+  await assert.rejects(()=>rpc('send_message',{requestId:request,text:'porra'}),/ofensivo/);
+  await assert.rejects(()=>rpc('send_message',{requestId:request,text:'x'.repeat(401)}),/check constraint/);
+  await rpc('send_message',{requestId:request,text:'Manter a cor terracota?'});
+  await actor(stranger);
+  assert.equal(await count('requests'),0);assert.equal(await count('messages'),0);assert.equal(await count('payments'),0);
+  await assert.rejects(()=>rpc('send_message',{requestId:request,text:'Intrusão'}),/restrito/);
+  await actor(seller);for(let i=0;i<4;i++)await rpc('advance_production',{requestId:request});
+  await assert.rejects(()=>rpc('confirm_receipt',{requestId:request}),/Somente o cliente/);
+  await assert.rejects(()=>rpc('cancel_request',{requestId:request,reason:'Tarde demais'}),/não pode/);
+  await actor(client);await rpc('confirm_receipt',{requestId:request});await rpc('review',{requestId:request,rating:5,comment:'Ótima entrega',targetUserId:stranger});
+  assert.equal((await db.query('select target_id from public.reviews')).rows[0].target_id,seller);
+  await assert.rejects(()=>rpc('review',{requestId:request,rating:5}),/unique constraint/);
+  await actor(seller);await rpc('review',{requestId:request,rating:4,comment:'Boa comunicação'});
+  await actor(client);await rpc('read_notifications');assert.equal((await db.query('select count(*)::int n from public.notifications where not read')).rows[0].n,0);
+  // Storage policies bind owner, request and actually attached path together.
+  const path=`${client}/${request}/reference.pdf`;
+  await db.query("insert into storage.objects(bucket_id,name) values('request-files',$1)",[path]);
+  await assert.rejects(()=>db.query("insert into storage.objects(bucket_id,name) values('request-files',$1)",[`${stranger}/${request}/forged.pdf`]),/row-level security/);
+  await actor(stranger);assert.equal((await db.query('select count(*)::int n from storage.objects')).rows[0].n,0);
+  await actor(client);const cancelled=await rpc('save_request',{data:{title:'Pedido cancelável',description:'Modelo simples',category:'Impressão 3D',budget:30,desiredDeadline:'2099-12-20'}});await rpc('cancel_request',{requestId:cancelled,reason:'Projeto encerrado'});
+  assert.equal((await db.query('select status from public.requests where id=$1',[cancelled])).rows[0].status,'Cancelado');
+ } finally {await db.close();}
+});
